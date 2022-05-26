@@ -1,0 +1,9 @@
+<suite name="Test-method Suite" parallel="methods" thread-count="2" >
+    <parameter name="username" value="ukyazimova"/>
+    <parameter name="password" value="Password1"/>
+    <test name="Test-method test" group-by-instances="true">
+        <classes>
+            <class name="apiTests.APITests" />
+        </classes>
+    </test>
+</suite>
