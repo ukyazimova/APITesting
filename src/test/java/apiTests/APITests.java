@@ -14,6 +14,7 @@ import org.testng.annotations.Test;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
 
@@ -26,6 +27,7 @@ public class APITests {
     static String authToken = "";
     String postId;
     String postIdToDelete;
+    String postIdToEdit;
     static Integer userId;
     String commentId;
 
@@ -132,13 +134,15 @@ public class APITests {
                 .statusCode(201)
                 .log()
                 .all();
-
+        postIdToDelete = "";
 
     }
 
     @Test
     public void getMyPosts() {
-
+        postId = "";
+        postIdToDelete = "";
+        postIdToEdit = "";
         Response response = given()
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + authToken)
@@ -165,6 +169,10 @@ public class APITests {
         postId = postId.substring(1, 5);
         System.out.println("The extracted post id with most comments is: " + postId);
         System.out.println("The extracted post id to be deleted is: " + postIdToDelete);
+        ArrayList arrayList = JsonPath.parse(getPostsResponseBody).read("$.[?(@.commentsCount!=0)].id");
+        postIdToEdit = arrayList.get(0).toString();
+        System.out.println("Post to Edit ID is " + postIdToEdit);
+
     }
 
     @Test(dependsOnMethods = "getMyPosts")
@@ -188,13 +196,13 @@ public class APITests {
         ActionsPOJO commentPost = new ActionsPOJO();
         commentPost.setCaption("New Caption");
         commentPost.setPostStatus("private");
-        System.out.println("Post to Edit:" + postId);
+        System.out.println("Post to Edit:" + postIdToEdit);
         given()
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + authToken)
                 .body(commentPost)
                 .when()
-                .put("/posts/" + postId)
+                .put("/posts/" + postIdToEdit)
                 .then()
                 .assertThat().body("caption", equalTo("New Caption"))
                 .log()
@@ -203,7 +211,8 @@ public class APITests {
 
     @Test(dependsOnMethods = "getMyPosts")
     public void removePost() {
-        if (postIdToDelete != "0") {
+        System.out.println("postIdToDelete value is " + postIdToDelete);
+        if (!postIdToDelete.equals("0")) {
             given()
                     .header("Content-Type", "application/json")
                     .header("Authorization", "Bearer " + authToken)
@@ -214,11 +223,13 @@ public class APITests {
                     .log()
                     .all();
 
-        } else {
-            System.out.println("Nothing to delete");
+        }
+        if (postIdToDelete.equals("0")) {
+            // System.out.println("Nothing to delete");
 //Eternal calls to addPosts
-            // addPosts();
-            // removePost();
+            addPosts();
+            getMyPosts();
+            removePost();
         }
 
     }
@@ -261,6 +272,7 @@ public class APITests {
 
 
     }
+
     @Test(dependsOnMethods = "getMyPosts")
     public void postComments() {
 
@@ -294,13 +306,13 @@ public class APITests {
     @Test(dependsOnMethods = "getMyPosts")
     public void removeComments() {
 
-       postComments();
+        postComments();
 
         given()
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + authToken)
                 .when()
-                .delete("/posts/" + postId + "/comments/"+commentId)
+                .delete("/posts/" + postId + "/comments/" + commentId)
                 .then()
                 .log()
                 .all()
