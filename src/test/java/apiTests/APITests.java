@@ -226,7 +226,6 @@ public class APITests {
         }
         if (postIdToDelete.equals("0")) {
             // System.out.println("Nothing to delete");
-//Eternal calls to addPosts
             addPosts();
             getMyPosts();
             removePost();
