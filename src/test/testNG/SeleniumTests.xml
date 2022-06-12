@@ -1,0 +1,7 @@
+<suite name="Test-method Suite" parallel="methods" thread-count="2" >
+    <test name="InitialSeleniumTests">
+        <classes>
+            <class name="selenium.InitialSeleniumTest" />
+        </classes>
+    </test>
+</suite>
