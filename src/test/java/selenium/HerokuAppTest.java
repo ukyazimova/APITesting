@@ -3,6 +3,7 @@ package selenium;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.interactions.Action;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.*;
 import org.testng.Assert;
@@ -76,6 +77,20 @@ public class HerokuAppTest {
     }
 
     //Challenging DOM
+    @Test
+    public void challengingDOM() {
+        driver.get("https://the-internet.herokuapp.com/challenging_dom");
+        WebElement firstButton = driver.findElement(By.xpath("//a[@class='button']"));
+        WebElement secondButton = driver.findElement(By.xpath("//a[@class='button alert']"));
+        WebElement thirdButton = driver.findElement(By.xpath("//a[@class='button success']"));
+
+        List<WebElement> columnHeaders = driver.findElements(By.xpath("//table/thead//th"));
+        Assert.assertEquals(driver.findElement(By.xpath("//table/thead//th[1]")).getText(), "Lorem");
+
+        String linkCell = driver.findElement(By.xpath("//table/tbody//tr/td/a")).getText();
+        Assert.assertTrue(linkCell.contains("edit"));
+        Assert.assertEquals(driver.findElement(By.xpath("//table/tbody//tr/td/a[contains(text(),'delete')]")).getText(), "delete");
+    }
 
     // Checkboxes
     @Test
@@ -141,16 +156,18 @@ public class HerokuAppTest {
         actions = new Actions(driver);
         WebElement elementA = driver.findElement(By.id("column-a"));
         WebElement elementB = driver.findElement(By.id("column-b"));
-        Thread.sleep(5000);
-        // actions.moveToElement(elementA).clickAndHold(elementA).moveToElement(elementB).release(elementB).build().perform();
-        actions.dragAndDrop(elementA, elementB).build().perform();
+        Thread.sleep(50);
+        actions.moveToElement(elementA).clickAndHold(elementA).release(elementB).build().perform();
+        //actions.moveToElement(elementA).clickAndHold(elementA).moveToElement(elementB).release(elementB).build().perform();
+        //actions.dragAndDrop(elementA, elementB).build().perform();
+        Thread.sleep(50);
         WebElement elementAHeader = driver.findElement(By.xpath("//div[@id='column-a']/header"));
         WebElement elementBHeader = driver.findElement(By.xpath("//div[@id='column-b']/header"));
+        Thread.sleep(50);
+
         String aHeaderText = elementAHeader.getText();
         String bHeaderText = elementBHeader.getText();
-
-
-        Thread.sleep(5000);
+//Assertion is not working
         Assert.assertEquals(aHeaderText, "B");
         Assert.assertEquals(bHeaderText, "A");
 
@@ -164,26 +181,23 @@ public class HerokuAppTest {
         WebElement text2 = driver.findElement(By.xpath("//div[@id='content']/div[2]/div[2]"));
         WebElement text3 = driver.findElement(By.xpath("//div[@id='content']/div[3]/div[2]"));
 
-        Thread.sleep(500);
+        Thread.sleep(50);
         driver.navigate().refresh();
-
-        Thread.sleep(500);
+        Thread.sleep(50);
 
         Assert.assertNotEquals(text1, driver.findElement(By.xpath("//div[@id='content']/div[1]/div[2]")));
         Assert.assertNotEquals(text2, driver.findElement(By.xpath("//div[@id='content']/div[2]/div[2]")));
         Assert.assertNotEquals(text3, driver.findElement(By.xpath("//div[@id='content']/div[3]/div[2]")));
         WebElement clickHereLink = driver.findElement(By.xpath("//*[@id='content']/div//a[text()='click here']"));
         clickHereLink.click();
-        Thread.sleep(500);
+        Thread.sleep(50);
         driver.navigate().refresh();
-        Thread.sleep(500);
-        //Assert.assertEquals(text1 ,driver.findElement(By.xpath("//div[@id='content']/div[1]/div[2]")).getText());
-        //Assert.assertEquals( driver.findElement(By.xpath("//div[@id='content']/div[2]/div[2]")).getText(),text2);
+        Thread.sleep(50);
+
+        Assert.assertEquals(driver.findElement(By.xpath("//div[@id='content']/div[1]/div[2]")).getText(), driver.findElement(By.xpath("//div[2]/div/div/div/div/div[1]/div[2]")).getText());
+        Assert.assertEquals(driver.findElement(By.xpath("//div[@id='content']/div[2]/div[2]")).getText(), driver.findElement(By.xpath("//div[@id='content']/div[2]/div[2]")).getText());
         Assert.assertNotEquals(text3, driver.findElement(By.xpath("//div[@id='content']/div[3]/div[2]")));
 
-        //Create JS Executor
-        //JavascriptExecutor js = (JavascriptExecutor) driver;
-        // js.executeScript();
     }
 
     //  Dynamic Controls
@@ -202,12 +216,12 @@ public class HerokuAppTest {
         // Assert.assertEquals(driver.findElement(By.id("message")).getText(), "It's gone!");
 
         //fluent wait
-        Wait<WebDriver> wait = new FluentWait<WebDriver>(driver)
+        Wait<WebDriver> wait = new FluentWait<>(driver)
                 .withTimeout(Duration.ofSeconds(20))
                 .pollingEvery(Duration.ofSeconds(1))
                 .ignoring(NoSuchElementException.class);
 
-        WebElement loadingBar = wait.until(new Function<WebDriver, WebElement>() {
+        WebElement loadingBar = wait.until(new Function<>() {
 
             public WebElement apply(WebDriver driver) {
                 return driver.findElement(By.xpath("//div[@id='loading']"));
@@ -223,20 +237,37 @@ public class HerokuAppTest {
     @Test
     public void dynamicLoading() throws InterruptedException {
         driver.get("https://the-internet.herokuapp.com/dynamic_loading");
+        WebElement hidden = driver.findElement(By.xpath("//div[@class='example']/a[contains(text(),'Example 1')]"));
+
+        hidden.click();
         By startButton = By.xpath("//div[@id='start']/button");
-        By helloText = By.xpath("//div[@id='finish']");
 
         WebElement startButtonElement = driver.findElement(startButton);
         startButtonElement.click();
-        WebElement helloWorldTextElement = driver.findElement(helloText);
+        Thread.sleep(60);
+
+        WebElement helloText = driver.findElement(By.xpath("//div[@id='finish']"));
+
+        // Assert.assertEquals(helloText.getText(), "Hello World!");
+
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("window.history.go(-1)");
+        Thread.sleep(30);
+        WebElement visible = driver.findElement(By.xpath("//div[@class='example']/a[contains(text(),'Example 2')]"));
+        visible.click();
+        driver.findElement(startButton).click();
+
+        WebElement helloWorldTextElement = driver.findElement(By.xpath("//div[@id='finish']"));
+        Assert.assertEquals(helloWorldTextElement.getText(), "Hello World!");
 
         Thread.sleep(30);
+
 
     }
 
     //  Floating Menu
     @Test
-    public void floatingMenu() throws InterruptedException {
+    public void floatingMenu() {
         driver.get("https://the-internet.herokuapp.com/floating_menu");
         WebElement homeButton = driver.findElement(By.xpath("//*[@id='menu']//a[@href='#home']"));
         Assert.assertTrue(homeButton.isDisplayed());
@@ -251,29 +282,70 @@ public class HerokuAppTest {
         Assert.assertTrue(homeButton.isDisplayed());
         //Thread.sleep(50);
     }
+
     //  Hovers
-    //  Multiple Windows
-    //  Redirect Link
-
     @Test
-    public void switchWindow() {
+    public void hovers() {
+        driver.get("http://the-internet.herokuapp.com/hovers");
+        WebElement image1 = driver.findElement(By.xpath("//div[@class='figure'][1]"));
+        WebElement image2 = driver.findElement(By.xpath("//div[@class='figure'][2]"));
+        WebElement image3 = driver.findElement(By.xpath("//div[@class='figure'][3]"));
+        WebElement userName1 = driver.findElement(By.xpath("//h5[contains(text(),'user1')]"));
+        WebElement userName2 = driver.findElement(By.xpath("//h5[contains(text(),'user2')]"));
+        WebElement userName3 = driver.findElement(By.xpath("//h5[contains(text(),'user3')]"));
 
+        actions.moveToElement(image1).perform();
+        Assert.assertTrue(userName1.isDisplayed());
+
+        actions.moveToElement(image2).perform();
+        Assert.assertTrue(userName2.isDisplayed());
+
+        actions.moveToElement(image3).perform();
+        Assert.assertTrue(userName3.isDisplayed());
     }
 
+    //  Redirect Link
+    @Test
+    public void redirectLink() throws InterruptedException {
+        driver.get("https://the-internet.herokuapp.com/redirector");
+        WebElement hereLink = driver.findElement(By.xpath("//a[@id='redirect']"));
+        hereLink.click();
+        Thread.sleep(15);
+        String redirected_url = driver.getCurrentUrl();
+        driver.get(redirected_url);
+        WebElement h3Text = driver.findElement(By.xpath("//h3"));
+        Assert.assertEquals(h3Text.getText(), "Status Codes");
+    }
+
+    //  Multiple Windows
+    @Test
+    public void switchWindow() throws InterruptedException {
+        driver.get("https://the-internet.herokuapp.com/windows");
+        String firstWindow = driver.getWindowHandle();
+        WebElement clickHereLink = driver.findElement(By.linkText("Click Here"));
+        clickHereLink.click();
+        for (String winHandle : driver.getWindowHandles()) {
+            driver.switchTo().window(winHandle);
+        }
+        Thread.sleep(15);
+    }
+
+    //iFrames
     @Test
     public void iFrames() {
         driver.get("https://the-internet.herokuapp.com/iframe");
 
         driver.switchTo().frame("mce_0_ifr");
-        WebElement textElement = driver.findElement(By.xpath("*[@id='tinymce']//p"));
+        WebElement textElement = driver.findElement(By.xpath("//body[@id='tinymce']//p"));
         textElement.clear();
         textElement.sendKeys("random text");
         driver.switchTo().defaultContent();
-        WebElement headerTxt = driver.findElement(By.xpath("*[@class='example']//h3"));
-
+        WebElement headerTxt = driver.findElement(By.xpath("//div[@class='example']/h3"));
+        Assert.assertEquals(headerTxt.getText(), "An iFrame containing the TinyMCE WYSIWYG Editor");
 
     }
 
+    //nestedFrames
     @Test
     public void nestedFrames() {
         driver.get("https://the-internet.herokuapp.com/nested_frames");
@@ -281,13 +353,20 @@ public class HerokuAppTest {
         driver.switchTo().frame("frame-top").switchTo().frame("frame-left");
         WebElement leftFrameBody = driver.findElement(By.xpath("//body"));
         Assert.assertEquals(leftFrameBody.getText(), "LEFT");
-
-        //driver.switchTo().parentFrame();
-        driver.switchTo().defaultContent();
+        driver.switchTo().parentFrame();
+        driver.switchTo().frame("frame-right");
+        WebElement rightFrameBody = driver.findElement(By.xpath("//body"));
+        Assert.assertEquals(rightFrameBody.getText(), "RIGHT");
+        driver.switchTo().parentFrame();
+        //driver.switchTo().defaultContent();
         driver.switchTo().frame("frame-middle");
         WebElement middleFrameBody = driver.findElement(By.xpath("//body"));
         Assert.assertEquals(middleFrameBody.getText(), "MIDDLE");
+        driver.switchTo().defaultContent();
 
+        driver.switchTo().frame("frame-bottom");
+        WebElement bottomFrameBody = driver.findElement(By.xpath("//body"));
+        Assert.assertEquals(bottomFrameBody.getText(), "BOTTOM");
     }
 
     @AfterMethod
